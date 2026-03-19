@@ -1,6 +1,38 @@
 /**
- * Tests for auth configuration: token handling and session structure.
+ * Tests for auth configuration: token handling, session structure, and config.
  */
+
+// Mock next-auth to avoid ESM issues in jest
+jest.mock("next-auth", () => ({
+  __esModule: true,
+  default: jest.fn(() => ({
+    handlers: {},
+    signIn: jest.fn(),
+    signOut: jest.fn(),
+    auth: jest.fn(),
+  })),
+}));
+
+jest.mock("next-auth/providers/google", () => ({
+  __esModule: true,
+  default: jest.fn((config: unknown) => config),
+}));
+
+import { authConfig } from "@/auth";
+
+describe("Auth config", () => {
+  it("should use JWT session strategy", () => {
+    expect(authConfig.session?.strategy).toBe("jwt");
+  });
+
+  it("should set session maxAge to 28800 seconds (8 hours)", () => {
+    expect(authConfig.session?.maxAge).toBe(28800);
+  });
+
+  it("should set signIn page to /", () => {
+    expect(authConfig.pages?.signIn).toBe("/");
+  });
+});
 
 describe("Auth callbacks", () => {
   function jwtCallback({

@@ -344,6 +344,57 @@ describe("CalendarStep", () => {
     expect(toast.className).toContain("red");
   });
 
+  it("shows session expired message when /api/calendars returns 401", async () => {
+    global.fetch = jest.fn().mockImplementation(() =>
+      Promise.resolve({
+        ok: false,
+        status: 401,
+        json: () => Promise.resolve({ error: "Not authenticated" }),
+      })
+    );
+
+    await act(async () => {
+      renderCalendarStep();
+    });
+
+    await waitFor(() => {
+      expect(
+        screen.getByText(/session expired/i)
+      ).toBeInTheDocument();
+    });
+
+    expect(screen.getByRole("button", { name: /sign in again/i })).toBeInTheDocument();
+  });
+
+  it("shows session expired message when /api/events returns 401", async () => {
+    const user = userEvent.setup({ advanceTimers: jest.advanceTimersByTime });
+    global.fetch = jest.fn().mockImplementation((url: string) => {
+      if (url === "/api/calendars") return mockFetchCalendars();
+      if (url === "/api/events")
+        return Promise.resolve({
+          ok: false,
+          status: 401,
+          json: () => Promise.resolve({ error: "Not authenticated" }),
+        });
+      return Promise.reject(new Error("Unexpected fetch"));
+    });
+
+    await act(async () => {
+      renderCalendarStep();
+    });
+
+    const button = screen.getByRole("button", { name: /add to calendar/i });
+    await user.click(button);
+
+    await waitFor(() => {
+      expect(
+        screen.getByText(/session expired/i)
+      ).toBeInTheDocument();
+    });
+
+    expect(screen.getByRole("button", { name: /sign in again/i })).toBeInTheDocument();
+  });
+
   it("Back button calls onBack", async () => {
     const user = userEvent.setup({ advanceTimers: jest.advanceTimersByTime });
     global.fetch = jest.fn().mockImplementation(() => mockFetchCalendars());

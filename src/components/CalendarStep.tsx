@@ -17,7 +17,7 @@ interface CalendarStepProps {
 
 interface ToastState {
   message: string;
-  type: "success" | "partial" | "error";
+  type: "success" | "partial" | "error" | "auth";
 }
 
 export default function CalendarStep({
@@ -35,6 +35,13 @@ export default function CalendarStep({
   useEffect(() => {
     async function fetchCalendars() {
       const res = await fetch("/api/calendars");
+      if (res.status === 401) {
+        setToast({
+          message: "Session expired. Please sign in again.",
+          type: "auth",
+        });
+        return;
+      }
       const data = await res.json();
       const cals: CalendarOption[] = data.calendars ?? [];
       setCalendars(cals);
@@ -71,6 +78,14 @@ export default function CalendarStep({
           cases: selectedCases,
         }),
       });
+
+      if (res.status === 401) {
+        setToast({
+          message: "Session expired. Please sign in again.",
+          type: "auth",
+        });
+        return;
+      }
 
       const data = await res.json();
       const results: Array<{ caseNumber: string; success: boolean }> =
@@ -113,7 +128,9 @@ export default function CalendarStep({
       ? "bg-green-100 border-green-400 text-green-800"
       : toast?.type === "partial"
         ? "bg-orange-100 border-orange-400 text-orange-800"
-        : "bg-red-100 border-red-400 text-red-800";
+        : toast?.type === "auth"
+          ? "bg-yellow-100 border-yellow-400 text-yellow-800"
+          : "bg-red-100 border-red-400 text-red-800";
 
   return (
     <div className="flex flex-col gap-6 p-4">
@@ -151,6 +168,15 @@ export default function CalendarStep({
           className={`rounded-lg border px-4 py-3 text-sm font-medium ${toastColorClass}`}
         >
           {toast.message}
+          {toast.type === "auth" && (
+            <button
+              type="button"
+              onClick={() => { window.location.href = "/"; }}
+              className="ml-3 underline font-semibold"
+            >
+              Sign in again
+            </button>
+          )}
         </div>
       )}
 

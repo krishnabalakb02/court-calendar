@@ -1,7 +1,7 @@
 import NextAuth from "next-auth";
 import Google from "next-auth/providers/google";
 
-export const { handlers, signIn, signOut, auth } = NextAuth({
+export const authConfig = {
   providers: [
     Google({
       clientId: process.env.GOOGLE_CLIENT_ID,
@@ -16,9 +16,13 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       },
     }),
   ],
+  session: {
+    strategy: "jwt" as const,
+    maxAge: 28800, // 8 hours
+  },
   callbacks: {
-    async jwt({ token, account }) {
-      // Persist the OAuth access_token and refresh_token to the JWT
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    async jwt({ token, account }: any) {
       if (account) {
         token.accessToken = account.access_token;
         token.refreshToken = account.refresh_token;
@@ -26,8 +30,8 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       }
       return token;
     },
-    async session({ session, token }) {
-      // Send access token to client via session
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    async session({ session, token }: any) {
       session.accessToken = token.accessToken as string;
       session.refreshToken = token.refreshToken as string;
       session.expiresAt = token.expiresAt as number;
@@ -37,4 +41,6 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
   pages: {
     signIn: "/",
   },
-});
+};
+
+export const { handlers, signIn, signOut, auth } = NextAuth(authConfig);

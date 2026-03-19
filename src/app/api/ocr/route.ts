@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { GoogleGenerativeAI } from "@google/generative-ai";
+import { auth } from "@/auth";
 import { parseGeminiResponse, buildGeminiPrompt, type CaseData } from "@/lib/ocr";
 
 interface OcrResponse {
@@ -9,6 +10,14 @@ interface OcrResponse {
 }
 
 export async function POST(request: NextRequest): Promise<NextResponse<OcrResponse>> {
+  const session = await auth();
+  if (!session) {
+    return NextResponse.json(
+      { cases: [], error: "Not authenticated" },
+      { status: 401 },
+    );
+  }
+
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) {
     return NextResponse.json(
