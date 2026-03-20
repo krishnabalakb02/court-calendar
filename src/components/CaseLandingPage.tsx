@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useSession, signIn } from "next-auth/react";
 import Header from "@/components/Header";
 import CaseCalendar from "@/components/CaseCalendar";
 import type { CalendarEvent, CalendarEntry } from "@/lib/calendar";
@@ -110,10 +111,18 @@ function EmptyState({ onStartWizard }: { onStartWizard: () => void }) {
 }
 
 export default function CaseLandingPage({ onStartWizard }: CaseLandingPageProps) {
+  const { data: session } = useSession();
   const [events, setEvents] = useState<CalendarEvent[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<ViewMode>("list");
+
+  // If the token refresh failed, prompt the user to re-authenticate
+  useEffect(() => {
+    if (session?.error === "RefreshAccessTokenError") {
+      signIn("google", { callbackUrl: "/dashboard" });
+    }
+  }, [session?.error]);
 
   useEffect(() => {
     async function load() {
@@ -122,7 +131,7 @@ export default function CaseLandingPage({ onStartWizard }: CaseLandingPageProps)
       try {
         const calRes = await fetch("/api/calendars");
         if (calRes.status === 401) {
-          setLoading(false);
+          signIn("google", { callbackUrl: "/dashboard" });
           return;
         }
         const calData = await calRes.json();
