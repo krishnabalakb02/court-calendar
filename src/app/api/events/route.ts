@@ -1,7 +1,36 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/auth";
-import { createEvents } from "@/lib/calendar";
+import { createEvents, listUpcomingEvents } from "@/lib/calendar";
 import type { CaseData } from "@/lib/ocr";
+
+export async function GET(request: NextRequest) {
+  const session = await auth();
+
+  if (!session?.accessToken) {
+    return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
+  }
+
+  const { searchParams } = new URL(request.url);
+  const calendarId = searchParams.get("calendarId");
+
+  if (!calendarId) {
+    return NextResponse.json(
+      { error: "calendarId query parameter is required" },
+      { status: 400 },
+    );
+  }
+
+  try {
+    const events = await listUpcomingEvents(session.accessToken, calendarId);
+    return NextResponse.json({ events });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Unknown error";
+    return NextResponse.json(
+      { error: `Failed to fetch events: ${message}` },
+      { status: 502 },
+    );
+  }
+}
 
 interface EventsRequestBody {
   calendarId: string;

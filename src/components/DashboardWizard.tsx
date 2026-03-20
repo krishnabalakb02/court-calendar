@@ -6,10 +6,11 @@ import WizardShell from "@/components/WizardShell";
 import UploadStep from "@/components/UploadStep";
 import ReviewStep from "@/components/ReviewStep";
 import CalendarStep from "@/components/CalendarStep";
+import CaseLandingPage from "@/components/CaseLandingPage";
 import type { CaseData } from "@/lib/ocr";
 
 export default function DashboardWizard() {
-  const [currentStep, setCurrentStep] = useState(0);
+  const [currentStep, setCurrentStep] = useState(-1);
   const [extractedCases, setExtractedCases] = useState<CaseData[]>([]);
   const [selectedCases, setSelectedCases] = useState<CaseData[]>([]);
   const [imageUrl, setImageUrl] = useState("");
@@ -28,17 +29,21 @@ export default function DashboardWizard() {
     setCurrentStep((prev) => Math.max(0, prev - 1));
   };
 
-  const handleReset = () => {
-    setCurrentStep(0);
+  const handleGoHome = () => {
+    setCurrentStep(-1);
     setExtractedCases([]);
     setSelectedCases([]);
     setImageUrl("");
   };
 
+  if (currentStep === -1) {
+    return <CaseLandingPage onStartWizard={() => setCurrentStep(0)} />;
+  }
+
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-dvh bg-slate-50">
       <Header />
-      <main className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
+      <main className="mx-auto max-w-7xl px-2 py-4 sm:px-4 sm:py-8 lg:px-8 lg:py-10">
         <WizardShell currentStep={currentStep} onBack={handleBack}>
           {currentStep === 0 && (
             <UploadStep onComplete={handleUploadComplete} />
@@ -55,7 +60,7 @@ export default function DashboardWizard() {
             <CalendarStep
               selectedCases={selectedCases}
               onBack={handleBack}
-              onReset={handleReset}
+              onReset={handleGoHome}
             />
           )}
         </WizardShell>
